@@ -405,6 +405,13 @@ body {
   align-items: center;
 }
 
+.director-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
 @media (max-width: 452px) {
   .detail-grid {
     grid-template-columns: repeat(1, 1fr);

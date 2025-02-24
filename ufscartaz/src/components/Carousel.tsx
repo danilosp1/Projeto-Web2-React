@@ -22,7 +22,7 @@ const Carousel: React.FC<CarouselProps> = ({ title, items }) => {
   const scrollCarousel = (direction: number) => {
     if (containerRef.current) {
       const cardWidth = containerRef.current.querySelector('.carousel-card')?.clientWidth || 0;
-      const gap = 16; // aproximadamente 1rem = 16px
+      const gap = 16;
       containerRef.current.scrollBy({
         left: (cardWidth + gap) * direction,
         behavior: "smooth",
@@ -40,6 +40,7 @@ const Carousel: React.FC<CarouselProps> = ({ title, items }) => {
         <div ref={containerRef} className="carousel-container">
           {items.map(item => {
             const type = item.media_type || (item.title ? "movie" : "tv");
+            if (!item.poster_path) return null;
             return (
               <div key={`${item.id}-${type}`} className="carousel-card">
                 <img src={`${IMAGE_BASE_URL}${item.poster_path}`} alt={item.title || item.name} />

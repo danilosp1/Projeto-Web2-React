@@ -107,6 +107,8 @@ const Details: React.FC = () => {
     }
   };
 
+  const getDirector = () => credits.crew.find((member: any) => member.job === "Director");
+
   const getFavorites = () => {
     const favs = localStorage.getItem('favorites');
     return favs ? JSON.parse(favs) : [];
@@ -149,8 +151,9 @@ const Details: React.FC = () => {
     );
 
   const title = data.title || data.name;
-  const releaseDate = data.release_date || data.first_air_date;
+  const releaseDate = data.release_date! || data.first_air_date!;
   const genres = data.genres.map((genre) => genre.name).join(", ");
+  const director = getDirector();
 
   return (
     <div className="detail-page">
@@ -177,7 +180,7 @@ const Details: React.FC = () => {
             <p className="subinfo">Classificação indicativa: {certification}</p>
           </div>
         </div>
-        {trailerUrl && (
+        {trailerUrl ? (
           <div className="detail-trailer">
             <h2 className="detail-trailer-title">Assista ao trailer</h2>
             <iframe
@@ -185,11 +188,51 @@ const Details: React.FC = () => {
               src={trailerUrl}
               title={`Trailer de ${title}`}
               frameBorder="0"
-              allow="autoplay; encrypted-media"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             ></iframe>
           </div>
+        ) : (
+          <p className="detail-no-trailer">Trailer não disponível.</p>
         )}
+        <div className="detail-director">
+          <h2 className="detail-section-title">Diretor</h2>
+          {director ? (
+            <div className="director-info">
+              <img
+                className="director-photo"
+                src={`${PROFILE_IMAGE_BASE_URL}${director.profile_path}`}
+                alt={director.name}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/assets/images/default-profile.png';
+                }}
+              />
+              <p className="director-name">{director.name}</p>
+              <p className="director-role">(Diretor)</p>
+            </div>
+          ) : (
+            <p className="no-director">Diretor não encontrado.</p>
+          )}
+        </div>
+        <div className="detail-cast">
+          <h2 className="detail-section-title">Elenco</h2>
+          <div className="detail-grid">
+            {credits.cast.slice(0, 10).map((actor: any) => (
+              <div key={actor.id} className="cast-member">
+                <img
+                  className="cast-photo"
+                  src={`${PROFILE_IMAGE_BASE_URL}${actor.profile_path}`}
+                  alt={actor.name}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/assets/images/default-profile.png';
+                  }}
+                />
+                <p className="cast-name">{actor.name}</p>
+                <p className="cast-character">({actor.character})</p>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
