@@ -18,6 +18,7 @@ type DetailData = {
   first_air_date?: string;
   vote_average: number;
   genres: { id: number; name: string }[];
+  media_type?: string;
 };
 
 type Credits = {
@@ -35,15 +36,6 @@ const Details: React.FC = () => {
   const [trailerUrl, setTrailerUrl] = useState<string | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
 
-  const getFavorites = () => {
-    const favs = localStorage.getItem('favorites');
-    return favs ? JSON.parse(favs) : [];
-  };
-
-  const saveFavorites = (favorites: any[]) => {
-    localStorage.setItem('favorites', JSON.stringify(favorites));
-  };
-
   useEffect(() => {
     if (id) {
       fetchDetails(id, type);
@@ -53,7 +45,7 @@ const Details: React.FC = () => {
   useEffect(() => {
     if (data) {
       const favs = getFavorites();
-      setIsFavorite(favs.some((fav: any) => fav.id === data.id && fav.type === type));
+      setIsFavorite(favs.some((fav: any) => fav.id === data.id && fav.media_type === type));
     }
   }, [data, type]);
 
@@ -61,7 +53,7 @@ const Details: React.FC = () => {
     try {
       const response = await fetch(`${BASE_URL}/${type}/${id}?api_key=${API_KEY}&language=pt-BR`);
       const detailData = await response.json();
-      setData(detailData);
+      setData({ ...detailData, media_type: type });
       setBackground(detailData.backdrop_path);
       fetchAdditionalDetails(id, type);
       fetchCredits(id, type);
@@ -79,17 +71,16 @@ const Details: React.FC = () => {
 
   const fetchAdditionalDetails = async (id: string, type: string) => {
     try {
-      if (type === "movie") {
-        const response = await fetch(`${BASE_URL}/movie/${id}/release_dates?api_key=${API_KEY}&language=pt-BR`);
-        const data = await response.json();
-        const releaseInfo = data.results.find((entry: any) => entry.iso_3166_1 === "BR");
-        setCertification(releaseInfo?.release_dates[0]?.certification || "Não disponível");
-      } else if (type === "tv") {
-        const response = await fetch(`${BASE_URL}/tv/${id}/content_ratings?api_key=${API_KEY}&language=pt-BR`);
-        const data = await response.json();
-        const ratingInfo = data.results.find((entry: any) => entry.iso_3166_1 === "BR");
-        setCertification(ratingInfo?.rating || "Não disponível");
-      }
+      const endpoint = type === "movie" ? "release_dates" : "content_ratings";
+      const response = await fetch(`${BASE_URL}/${type}/${id}/${endpoint}?api_key=${API_KEY}&language=pt-BR`);
+      const data = await response.json();
+      const info = data.results.find((entry: any) => entry.iso_3166_1 === "BR");
+
+      setCertification(
+        type === "movie"
+          ? info?.release_dates[0]?.certification || "Não disponível"
+          : info?.rating || "Não disponível"
+      );
     } catch (error) {
       console.error("Erro ao buscar classificação indicativa:", error);
     }
@@ -116,22 +107,30 @@ const Details: React.FC = () => {
     }
   };
 
-  const getDirector = () => credits.crew.find((member: any) => member.job === "Director");
+  const getFavorites = () => {
+    const favs = localStorage.getItem('favorites');
+    return favs ? JSON.parse(favs) : [];
+  };
+
+  const saveFavorites = (favorites: any[]) => {
+    localStorage.setItem('favorites', JSON.stringify(favorites));
+  };
 
   const toggleFavorite = () => {
     if (!data) return;
     const favs = getFavorites();
-    const exists = favs.find((fav: any) => fav.id === data.id && fav.type === type);
+    const exists = favs.find((fav: any) => fav.id === data.id && fav.media_type === type);
     let newFavs;
+
     if (exists) {
       // Remove dos favoritos
-      newFavs = favs.filter((fav: any) => !(fav.id === data.id && fav.type === type));
+      newFavs = favs.filter((fav: any) => !(fav.id === data.id && fav.media_type === type));
       setIsFavorite(false);
     } else {
       // Adiciona aos favoritos
       const newFav = {
         id: data.id,
-        type: type,
+        media_type: type,
         title: data.title || data.name,
         poster_path: data.poster_path,
       };
@@ -152,11 +151,9 @@ const Details: React.FC = () => {
   const title = data.title || data.name;
   const releaseDate = data.release_date || data.first_air_date;
   const genres = data.genres.map((genre) => genre.name).join(", ");
-  const director = getDirector();
 
   return (
     <div className="detail-page">
-      <div id="blur-overlay"></div>
       <Header />
       <div className="detail-container">
         <a href="/" className="detail-back">
@@ -180,7 +177,7 @@ const Details: React.FC = () => {
             <p className="subinfo">Classificação indicativa: {certification}</p>
           </div>
         </div>
-        {trailerUrl ? (
+        {trailerUrl && (
           <div className="detail-trailer">
             <h2 className="detail-trailer-title">Assista ao trailer</h2>
             <iframe
@@ -188,51 +185,11 @@ const Details: React.FC = () => {
               src={trailerUrl}
               title={`Trailer de ${title}`}
               frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allow="autoplay; encrypted-media"
               allowFullScreen
             ></iframe>
           </div>
-        ) : (
-          <p className="detail-no-trailer">Trailer não disponível.</p>
         )}
-        <div className="detail-director">
-          <h2 className="detail-section-title">Diretor</h2>
-          {director ? (
-            <div className="director-info">
-              <img
-                className="director-photo"
-                src={`${PROFILE_IMAGE_BASE_URL}${director.profile_path}`}
-                alt={director.name}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/assets/images/default-profile.png';
-                }}
-              />
-              <p className="director-name">{director.name}</p>
-              <p className="director-role">(Diretor)</p>
-            </div>
-          ) : (
-            <p className="no-director">Diretor não encontrado.</p>
-          )}
-        </div>
-        <div className="detail-cast">
-          <h2 className="detail-section-title">Elenco</h2>
-          <div className="detail-grid">
-            {credits.cast.slice(0, 10).map((actor: any) => (
-              <div key={actor.id} className="cast-member">
-                <img
-                  className="cast-photo"
-                  src={`${PROFILE_IMAGE_BASE_URL}${actor.profile_path}`}
-                  alt={actor.name}
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/assets/images/default-profile.png';
-                  }}
-                />
-                <p className="cast-name">{actor.name}</p>
-                <p className="cast-character">({actor.character})</p>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );

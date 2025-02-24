@@ -41,7 +41,7 @@ const Carousel: React.FC<CarouselProps> = ({ title, items }) => {
           {items.map(item => {
             const type = item.media_type || (item.title ? "movie" : "tv");
             return (
-              <div key={item.id} className="carousel-card">
+              <div key={`${item.id}-${type}`} className="carousel-card">
                 <img src={`${IMAGE_BASE_URL}${item.poster_path}`} alt={item.title || item.name} />
                 <div className="carousel-overlay">
                   <Link to={`/details?id=${item.id}&type=${type}`} style={{ color: '#ffffff', background: '#dc2626', padding: '0.5rem 1rem', borderRadius: '9999px', textDecoration: 'none' }}>
