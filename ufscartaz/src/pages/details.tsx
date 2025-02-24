@@ -33,12 +33,29 @@ const Details: React.FC = () => {
   const [certification, setCertification] = useState<string>("Não disponível");
   const [credits, setCredits] = useState<Credits>({ cast: [], crew: [] });
   const [trailerUrl, setTrailerUrl] = useState<string | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  const getFavorites = () => {
+    const favs = localStorage.getItem('favorites');
+    return favs ? JSON.parse(favs) : [];
+  };
+
+  const saveFavorites = (favorites: any[]) => {
+    localStorage.setItem('favorites', JSON.stringify(favorites));
+  };
 
   useEffect(() => {
     if (id) {
       fetchDetails(id, type);
     }
   }, [id, type]);
+
+  useEffect(() => {
+    if (data) {
+      const favs = getFavorites();
+      setIsFavorite(favs.some((fav: any) => fav.id === data.id && fav.type === type));
+    }
+  }, [data, type]);
 
   const fetchDetails = async (id: string, type: string) => {
     try {
@@ -101,10 +118,39 @@ const Details: React.FC = () => {
 
   const getDirector = () => credits.crew.find((member: any) => member.job === "Director");
 
-  if (!data) return <div className="app-container"><Header /><p>Carregando...</p></div>;
+  const toggleFavorite = () => {
+    if (!data) return;
+    const favs = getFavorites();
+    const exists = favs.find((fav: any) => fav.id === data.id && fav.type === type);
+    let newFavs;
+    if (exists) {
+      // Remove dos favoritos
+      newFavs = favs.filter((fav: any) => !(fav.id === data.id && fav.type === type));
+      setIsFavorite(false);
+    } else {
+      // Adiciona aos favoritos
+      const newFav = {
+        id: data.id,
+        type: type,
+        title: data.title || data.name,
+        poster_path: data.poster_path,
+      };
+      newFavs = [...favs, newFav];
+      setIsFavorite(true);
+    }
+    saveFavorites(newFavs);
+  };
+
+  if (!data)
+    return (
+      <div className="app-container">
+        <Header />
+        <p>Carregando...</p>
+      </div>
+    );
 
   const title = data.title || data.name;
-  const releaseDate = data.release_date! || data.first_air_date!;
+  const releaseDate = data.release_date || data.first_air_date;
   const genres = data.genres.map((genre) => genre.name).join(", ");
   const director = getDirector();
 
@@ -117,12 +163,18 @@ const Details: React.FC = () => {
           <span className="material-icons detail-back-icon">chevron_left</span>
           <p className="detail-back-text">Voltar</p>
         </a>
+        <button className="favorite-button" onClick={toggleFavorite}>
+          {isFavorite ? "Remover dos Favoritos" : "Adicionar aos Favoritos"}
+        </button>
         <div className="detail-main">
           <img className="detail-poster" src={`${IMAGE_BASE_URL}${data.poster_path}`} alt={title} />
           <div className="detail-info">
             <h1 className="detail-title">{title}</h1>
             <p className="detail-overview">{data.overview}</p>
-            <p className="subinfo">{type === "movie" ? "Lançamento" : "Primeira exibição"}: {new Date(releaseDate).toLocaleDateString()}</p>
+            <p className="subinfo">
+              {type === "movie" ? "Lançamento" : "Primeira exibição"}:{" "}
+              {new Date(releaseDate).toLocaleDateString()}
+            </p>
             <p className="subinfo">Avaliação: {data.vote_average}</p>
             <p className="subinfo">Categoria: {genres}</p>
             <p className="subinfo">Classificação indicativa: {certification}</p>

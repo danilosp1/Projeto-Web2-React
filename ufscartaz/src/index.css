@@ -358,7 +358,17 @@ body {
 .detail-info {
   display: flex;
   flex-direction: column;
+  width: 50%;
   gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .detail-info {
+    display: flex;
+    flex-direction: column;
+    width: 80%;
+    gap: 1rem;
+  }
 }
 
 .detail-info h1 {
@@ -405,4 +415,20 @@ body {
   .detail-grid {
     grid-template-columns: repeat(5, 1fr);
   }
+}
+
+.favorite-button {
+  background-color: #dc2626;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 1rem;
+  width: 8rem;
+}
+
+.favorite-button:hover {
+  background-color: #b91c1c;
 }

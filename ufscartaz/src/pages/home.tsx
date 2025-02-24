@@ -24,6 +24,7 @@ const Home: React.FC = () => {
   const [popularMovies, setPopularMovies] = useState<Item[]>([]);
   const [popularSeries, setPopularSeries] = useState<Item[]>([]);
   const [documentaries, setDocumentaries] = useState<Item[]>([]);
+  const [favorites, setFavorites] = useState<Item[]>([]);
 
   useEffect(() => {
     const fetchPopularContentData = async () => {
@@ -81,17 +82,28 @@ const Home: React.FC = () => {
       }
     };
 
+    const loadFavorites = () => {
+      const favs = localStorage.getItem('favorites');
+      if (favs) {
+        setFavorites(JSON.parse(favs));
+      }
+    };
+
     fetchPopularContentData();
     fetchRecommendedContentData();
     fetchPopularMoviesData();
     fetchPopularSeriesData();
     fetchDocumentariesData();
+    loadFavorites();
   }, []);
 
   return (
     <div className="app-container">
       <Header />
       <main className="main-content">
+        {favorites.length > 0 && (
+          <Carousel title="Favoritos" items={favorites} />
+        )}
         <Carousel title="Populares" items={popularContent} />
         <Carousel title="Você pode gostar" items={recommendedContent} />
         <Carousel title="Filmes Populares" items={popularMovies} />
